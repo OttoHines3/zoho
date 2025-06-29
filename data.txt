@@ -2,6 +2,25 @@
 
 ## Project: Zoho Integration
 
+### Milestone 0 – Foundation
+- [x] 0.1 Database Schema Setup: Every persistent feature (users, checkout sessions, Zoho IDs, DocuSign tokens) relies on tables being there and the Prisma client generated.
+- [ ] 0.2 Secure API Access with Tokens / Sessions: Gives you protected backend routes before you expose any UI or integrations.
+- [ ] 0.3 Basic Auth Setup (NextAuth provider stubs): Needed for session checks in Step-1 UI.
+
+### Milestone 1 – Core Checkout Flow
+- [ ] 1.1 Build Step 1 UI – Module Selection & Card Entry: Kicks off every new session; design first to know what data you collect.
+- [ ] 1.2 Implement Payment Capture Logic: Piggybacks on Step-1's card details; use Stripe/FuseBox/etc.
+- [ ] 1.3 Build Step 2 UI – Information Intake Form: Needs session token + user ID from Step 1, persists to DB next.
+- [ ] 1.4 Submit & Persist Form Data: Stores the Step-2 payload and links it to the session row.
+
+### Milestone 2 – Agreements & CRM Sync
+- [ ] 2.1 Embed DocuSign or PandaDoc IFrame: Front-end now has contact info and a checkout ID to pre-fill the envelope.
+- [ ] 2.2 Track Agreement Completion Status: Webhook → tRPC mutation → update DB once signing is done. Depends on 2.1.
+- [ ] 2.3 Create or Update Zoho Contact: Requires validated user data + (optionally) agreement signed.
+- [ ] 2.4 Create Zoho Sales Order: Needs contact ID + payment confirmation; fires right after 2.3.
+- [ ] 2.5 Fetch CRM Data using zoho_id + login_code: Lets returning users resume/view status; depends on 2.3 creating IDs.
+- [ ] 2.6 Create Pre-loaded Signup Link Handler: Generates magic links once Zoho IDs exist; requires 2.5 fetch util.
+
 ### Current Status
 - ✅ Project initialized with Next.js, tRPC, and Prisma
 - ✅ Authentication setup with NextAuth
