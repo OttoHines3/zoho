@@ -1,3 +1,5 @@
+// Clerk authentication will be configured here.
+
 import NextAuth from "next-auth";
 import { cache } from "react";
 

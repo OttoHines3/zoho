@@ -4,8 +4,8 @@
 
 ### Milestone 0 – Foundation
 - [x] 0.1 Database Schema Setup: Every persistent feature (users, checkout sessions, Zoho IDs, DocuSign tokens) relies on tables being there and the Prisma client generated.
-- [ ] 0.2 Secure API Access with Tokens / Sessions: Gives you protected backend routes before you expose any UI or integrations.
-- [ ] 0.3 Basic Auth Setup (NextAuth provider stubs): Needed for session checks in Step-1 UI.
+- [x] 0.2 Secure API Access with Tokens / Sessions: Gives you protected backend routes before you expose any UI or integrations.
+- [ ] 0.3 Basic Auth Setup: Set up NextAuth or Clerk for handling user sessions. Support zoho_id and login_code as URL params to create or link accounts.
 
 ### Milestone 1 – Core Checkout Flow
 - [ ] 1.1 Build Step 1 UI – Module Selection & Card Entry: Kicks off every new session; design first to know what data you collect.
