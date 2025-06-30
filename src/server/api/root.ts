@@ -1,4 +1,9 @@
 import { postRouter } from "~/server/api/routers/post";
+import { checkoutRouter } from "~/server/api/routers/checkout";
+import { companyInfoRouter } from "~/server/api/routers/company-info";
+import { checkoutSessionRouter } from "~/server/api/routers/checkout-session";
+import { agreementRouter } from "~/server/api/routers/agreement";
+import { zohoRouter } from "~/server/api/routers/zoho";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,6 +13,11 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
+  checkout: checkoutRouter,
+  companyInfo: companyInfoRouter,
+  checkoutSession: checkoutSessionRouter,
+  agreement: agreementRouter,
+  zoho: zohoRouter,
 });
 
 // export type definition of API

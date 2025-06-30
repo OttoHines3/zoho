@@ -89,6 +89,7 @@ model CheckoutSession {
   cardLast4  String? // Last 4 digits of card used
   salesOrder SalesOrder?
   agreement  AgreementSignatureStatus?
+  companyInfo CompanyInfo?
 }
 
 model ZohoAccountLink {
@@ -123,4 +124,39 @@ model AgreementSignatureStatus {
   completedAt       DateTime?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+}
+
+model CompanyInfo {
+  id                String          @id @default(cuid())
+  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
+  checkoutSessionId String          @unique
+  companyName       String
+  contactName       String
+  email             String?
+  phone             String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String?          @default("US")
+  industry          String?
+  companySize       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model SignupLink {
+  id          String   @id @default(cuid())
+  zohoId      String   // Zoho contact ID
+  loginCode   String   // Secure login code for magic links
+  expiresAt   DateTime // When the link expires
+  maxUses     Int      @default(1) // Maximum number of times the link can be used
+  currentUses Int      @default(0) // Current number of times the link has been used
+  isActive    Boolean  @default(true) // Whether the link is still active
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([zohoId, loginCode])
+  @@index([zohoId])
+  @@index([loginCode])
 }

@@ -8,18 +8,18 @@
 - [ ] 0.3 Basic Auth Setup: Set up NextAuth or Clerk for handling user sessions. Support zoho_id and login_code as URL params to create or link accounts.
 
 ### Milestone 1 – Core Checkout Flow
-- [ ] 1.1 Build Step 1 UI – Module Selection & Card Entry: Kicks off every new session; design first to know what data you collect.
-- [ ] 1.2 Implement Payment Capture Logic: Piggybacks on Step-1's card details; use Stripe/FuseBox/etc.
-- [ ] 1.3 Build Step 2 UI – Information Intake Form: Needs session token + user ID from Step 1, persists to DB next.
-- [ ] 1.4 Submit & Persist Form Data: Stores the Step-2 payload and links it to the session row.
+- [x] 1.1 Build Step 1 UI – Module Selection & Card Entry: Kicks off every new session; design first to know what data you collect.
+- [x] 1.2 Implement Payment Capture Logic: Piggybacks on Step-1's card details; use Stripe/FuseBox/etc.
+- [x] 1.3 Build Step 2 UI – Information Intake Form: Needs session token + user ID from Step 1, persists to DB next.
+- [x] 1.4 Submit & Persist Form Data: Stores the Step-2 payload and links it to the session row.
 
 ### Milestone 2 – Agreements & CRM Sync
-- [ ] 2.1 Embed DocuSign or PandaDoc IFrame: Front-end now has contact info and a checkout ID to pre-fill the envelope.
-- [ ] 2.2 Track Agreement Completion Status: Webhook → tRPC mutation → update DB once signing is done. Depends on 2.1.
-- [ ] 2.3 Create or Update Zoho Contact: Requires validated user data + (optionally) agreement signed.
-- [ ] 2.4 Create Zoho Sales Order: Needs contact ID + payment confirmation; fires right after 2.3.
-- [ ] 2.5 Fetch CRM Data using zoho_id + login_code: Lets returning users resume/view status; depends on 2.3 creating IDs.
-- [ ] 2.6 Create Pre-loaded Signup Link Handler: Generates magic links once Zoho IDs exist; requires 2.5 fetch util.
+- [x] 2.1 Embed DocuSign or PandaDoc IFrame: Front-end now has contact info and a checkout ID to pre-fill the envelope.
+- [x] 2.2 Track Agreement Completion Status: Webhook → tRPC mutation → update DB once signing is done. Depends on 2.1.
+- [x] 2.3 Create or Update Zoho Contact: Requires validated user data + (optionally) agreement signed.
+- [x] 2.4 Create Zoho Sales Order: Needs contact ID + payment confirmation; fires right after 2.3.
+- [x] 2.5 Fetch CRM Data using zoho_id + login_code: Lets returning users resume/view status; depends on 2.3 creating IDs.
+- [x] 2.6 Create Pre-loaded Signup Link Handler: Generates magic links once Zoho IDs exist; requires 2.5 fetch util.
 
 ### Current Status
 - ✅ Project initialized with Next.js, tRPC, and Prisma
@@ -28,6 +28,47 @@
 - ✅ Environment configuration completed
 - ✅ Tailwind CSS v4 configured
 - ✅ Environment files setup for different environments
+- ✅ **COMPLETED: Milestone 1 - Core Checkout Flow**
+  - ✅ Step 1 UI with Stripe payment integration
+  - ✅ Payment capture logic with webhooks
+  - ✅ Step 2 UI with comprehensive company information form
+  - ✅ Database persistence for company information
+  - ✅ Checkout session management
+  - ✅ Dashboard for viewing sessions and company data
+- ✅ **COMPLETED: Milestone 2.1 & 2.2 - Agreement Integration**
+  - ✅ DocuSign IFrame embedding with pre-filled contact info
+  - ✅ Agreement status tracking with webhook handling
+  - ✅ Database updates for agreement completion
+  - ✅ Post-completion action triggers
+  - ✅ Dashboard integration for agreement status
+- ✅ **COMPLETED: Milestone 2.3 - Zoho Contact Integration**
+  - ✅ Zoho API router with contact creation/update functionality
+  - ✅ Contact data mapping from company information
+  - ✅ Agreement signing requirement validation
+  - ✅ Existing contact update logic
+  - ✅ Dashboard integration with Zoho contact management
+  - ✅ Contact search and retrieval functionality
+- ✅ **COMPLETED: Milestone 2.4 - Zoho Sales Order Integration**
+  - ✅ Sales order creation with payment confirmation validation
+  - ✅ Contact ID requirement validation
+  - ✅ Sales order data mapping from checkout session
+  - ✅ Database integration with existing sales order records
+  - ✅ Dashboard integration with sales order creation
+  - ✅ Combined contact and sales order creation workflow
+- ✅ **COMPLETED: Milestone 2.5 - CRM Data Fetching**
+  - ✅ Comprehensive CRM data fetching with contact, sales orders, deals, tasks, and notes
+  - ✅ Public API endpoint for returning users with zoho_id + login_code
+  - ✅ Dashboard integration with CRM data overview tab
+  - ✅ Configurable data inclusion options
+  - ✅ Error handling and validation for public access
+  - ✅ Real-time CRM data synchronization
+- ✅ **COMPLETED: Milestone 2.6 - Pre-loaded Signup Link Handler**
+  - ✅ Magic link generation with secure login codes
+  - ✅ Database storage for signup link tracking
+  - ✅ Link expiration and usage limit management
+  - ✅ Dashboard integration for link generation
+  - ✅ Magic link page for returning user access
+  - ✅ Comprehensive CRM data display for magic link users
 
 ### TODO
 - [ ] Implement Zoho API integration
