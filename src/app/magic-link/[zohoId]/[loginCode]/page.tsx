@@ -5,7 +5,6 @@ import { useParams } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Badge } from "~/components/ui/badge"
-import { Separator } from "~/components/ui/separator"
 import { User, DollarSign, Building, Clock, Check, ExternalLink, AlertCircle } from "lucide-react"
 
 interface CRMData {

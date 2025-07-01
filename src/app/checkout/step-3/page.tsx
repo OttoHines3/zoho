@@ -19,13 +19,16 @@ export default function CheckoutStep3Page() {
         { enabled: !!checkoutSessionId }
     )
 
+    // Use the mutation hook for DocuSign signing URL
+    const getSigningUrl = api.agreement.getDocuSignSigningUrl.useMutation();
+
     // Fetch DocuSign embedded signing URL
     useEffect(() => {
         if (!checkoutSessionId) return
         const fetchSigningUrl = async () => {
             try {
                 // Call tRPC endpoint to get DocuSign embedded signing URL
-                const result = await api.agreement.getDocuSignSigningUrl.mutate({
+                const result = await getSigningUrl.mutateAsync({
                     checkoutSessionId,
                 })
                 setSigningUrl(result.url)
@@ -33,8 +36,8 @@ export default function CheckoutStep3Page() {
                 setError("Failed to load signing URL. Please try again.")
             }
         }
-        fetchSigningUrl()
-    }, [checkoutSessionId])
+        void fetchSigningUrl()
+    }, [checkoutSessionId, getSigningUrl])
 
     if (!checkoutSessionId) {
         return (

@@ -46,7 +46,7 @@ export const authConfig = {
 
         // Find user by email
         const user = await db.user.findUnique({ where: { email } });
-        if (!user || !user.password) return null;
+        if (!user?.password) return null;
 
         // Compare hashed password
         const isValid = await bcrypt.compare(password, user.password);

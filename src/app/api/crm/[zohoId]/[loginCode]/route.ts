@@ -33,9 +33,9 @@ interface ZohoEntity {
 type ZohoArray = { data: unknown[] };
 
 const isZohoArray = (x: unknown): x is ZohoArray =>
-  !!x && typeof x === "object" && Array.isArray((x as any).data);
+  !!x && typeof x === "object" && Array.isArray((x as ZohoArray).data);
 const isWithId = (x: unknown): x is ZohoEntity =>
-  !!x && typeof x === "object" && typeof (x as any).id === "string";
+  !!x && typeof x === "object" && typeof (x as ZohoEntity).id === "string";
 
 /* ──────────────────────────  handler  ────────────────────────── */
 export async function GET(

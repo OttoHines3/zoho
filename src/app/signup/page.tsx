@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
-import bcrypt from "bcryptjs";
+
 
 const formSchema = z.object({
     name: z.string().min(2, "Name is required"),
@@ -17,7 +17,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function SignupPage() {
-    const router = useRouter();
+    useRouter();
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 

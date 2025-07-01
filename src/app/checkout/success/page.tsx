@@ -101,7 +101,7 @@ export default function PaymentSuccessPage() {
                 <Card className="w-full max-w-md">
                     <CardContent className="p-6 text-center">
                         <h1 className="text-xl font-semibold text-gray-900 mb-2">Payment Not Found</h1>
-                        <p className="text-gray-600 mb-4">We couldn't find the payment details you're looking for.</p>
+                        <p className="text-gray-600 mb-4">We couldn&apos;t find the payment details you&apos;re looking for.</p>
                         <Button onClick={() => window.history.back()}>Go Back</Button>
                     </CardContent>
                 </Card>
@@ -174,7 +174,7 @@ export default function PaymentSuccessPage() {
                     <div className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>What's Next?</CardTitle>
+                                <CardTitle>What&apos;s Next?</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">

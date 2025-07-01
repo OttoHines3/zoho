@@ -138,6 +138,9 @@ export default function SigninPage() {
             <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
               The next screen will ask for payment details.
             </p>
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+              Don&apos;t have an account? <a href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">Sign up</a>
+            </p>
           </>
         )}
 
