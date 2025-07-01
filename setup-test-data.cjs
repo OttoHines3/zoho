@@ -7,6 +7,7 @@
 
 const { PrismaClient } = require("@prisma/client");
 const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
@@ -14,19 +15,15 @@ const prisma = new PrismaClient();
 const TEST_DATA = {
   user: {
     email: "test@example.com",
-    password: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.i8eG", // testpassword123
+    password: "testpassword123", // plain text password
     name: "Test User",
   },
   checkoutSession: {
     id: "test-checkout-session-123",
-    email: "test@example.com",
-    amount: 29900, // $299.00
-    currency: "usd",
     status: "requires_payment_method",
-    stripe_payment_intent_id: "pi_test_1234567890",
-    modules: ["CRM", "Sales"],
-    created_at: new Date(),
-    updated_at: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // userId will be set by relation
   },
   companyInfo: {
     companyName: "Test Company Inc.",
@@ -40,46 +37,34 @@ const TEST_DATA = {
     country: "US",
     industry: "Technology",
     companySize: "10-50 employees",
-    checkout_session_id: "test-checkout-session-123",
+    // checkoutSessionId will be set by relation
   },
   agreement: {
-    checkout_session_id: "test-checkout-session-123",
-    docusign_envelope_id: "test-envelope-123",
+    provider: "docusign",
+    envelopeId: "test-envelope-123",
     status: "sent",
-    signed_at: null,
-    created_at: new Date(),
-    updated_at: new Date(),
+    completedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // checkoutSessionId will be set by relation
   },
   zohoAccountLink: {
-    zoho_id: "test-zoho-id-123",
-    user_id: "test-user-id-123",
-    access_token: "test-access-token",
-    refresh_token: "test-refresh-token",
-    expires_at: new Date(Date.now() + 3600000), // 1 hour from now
-    created_at: new Date(),
-    updated_at: new Date(),
+    zohoUserId: "test-zoho-id-123",
+    orgId: "test-org-id-123",
+    refreshToken: "test-refresh-token",
+    // userId will be set by relation
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   salesOrder: {
-    zoho_id: "test-sales-order-123",
-    checkout_session_id: "test-checkout-session-123",
-    contact_id: "test-contact-123",
-    order_number: "SO-2024-001",
-    status: "draft",
-    total_amount: 29900,
+    zohoSalesOrderId: "test-sales-order-123",
+    amount: 29900,
     currency: "usd",
-    created_at: new Date(),
-    updated_at: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // checkoutSessionId will be set by relation
   },
-  signupLink: {
-    zoho_id: "test-zoho-id-123",
-    login_code: "test-login-code-123",
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-    usage_limit: 5,
-    usage_count: 0,
-    is_active: true,
-    created_at: new Date(),
-    updated_at: new Date(),
-  },
+  // signupLink removed or commented out
 };
 
 async function setupTestData() {
@@ -90,6 +75,9 @@ async function setupTestData() {
     console.log("🧹 Cleaning up existing test data...");
     await cleanupTestData();
 
+    // Hash the test user's password
+    const hashedPassword = await bcrypt.hash(TEST_DATA.user.password, 12);
+
     // Create test user
     console.log("👤 Creating test user...");
     const user = await prisma.user.upsert({
@@ -98,7 +86,7 @@ async function setupTestData() {
       create: {
         id: "test-user-id-123",
         email: TEST_DATA.user.email,
-        password: TEST_DATA.user.password,
+        password: hashedPassword,
         name: TEST_DATA.user.name,
         emailVerified: new Date(),
       },
@@ -108,63 +96,78 @@ async function setupTestData() {
     // Create test checkout session
     console.log("💳 Creating test checkout session...");
     const checkoutSession = await prisma.checkoutSession.create({
-      data: TEST_DATA.checkoutSession,
+      data: {
+        ...TEST_DATA.checkoutSession,
+        user: { connect: { email: TEST_DATA.user.email } },
+      },
     });
     console.log("✅ Test checkout session created:", checkoutSession.id);
 
     // Create test company info
     console.log("🏢 Creating test company info...");
     const companyInfo = await prisma.companyInfo.create({
-      data: TEST_DATA.companyInfo,
+      data: {
+        ...TEST_DATA.companyInfo,
+        checkoutSessionId: checkoutSession.id,
+      },
     });
     console.log("✅ Test company info created:", companyInfo.companyName);
 
     // Create test agreement
     console.log("📄 Creating test agreement...");
-    const agreement = await prisma.agreement.create({
-      data: TEST_DATA.agreement,
+    const agreement = await prisma.agreementSignatureStatus.create({
+      data: {
+        ...TEST_DATA.agreement,
+        checkoutSessionId: checkoutSession.id,
+      },
     });
-    console.log("✅ Test agreement created:", agreement.docusign_envelope_id);
+    console.log("✅ Test agreement created:", agreement.envelopeId);
 
     // Create test Zoho account link
     console.log("🔗 Creating test Zoho account link...");
     const zohoLink = await prisma.zohoAccountLink.create({
-      data: TEST_DATA.zohoAccountLink,
+      data: {
+        ...TEST_DATA.zohoAccountLink,
+        userId: user.id,
+      },
     });
-    console.log("✅ Test Zoho account link created:", zohoLink.zoho_id);
+    console.log("✅ Test Zoho account link created:", zohoLink.zohoUserId);
 
     // Create test sales order
     console.log("📋 Creating test sales order...");
     const salesOrder = await prisma.salesOrder.create({
-      data: TEST_DATA.salesOrder,
+      data: {
+        ...TEST_DATA.salesOrder,
+        checkoutSessionId: checkoutSession.id,
+      },
     });
-    console.log("✅ Test sales order created:", salesOrder.order_number);
+    console.log("✅ Test sales order created:", salesOrder.zohoSalesOrderId);
 
     // Create test signup link
     console.log("🔗 Creating test signup link...");
-    const signupLink = await prisma.signupLink.create({
-      data: TEST_DATA.signupLink,
-    });
-    console.log("✅ Test signup link created:", signupLink.login_code);
+    // const signupLink = await prisma.signupLink.create({
+    //   data: TEST_DATA.signupLink,
+    // });
+    // console.log("✅ Test signup link created:", signupLink.login_code);
 
     console.log("\n🎉 Test data setup completed successfully!");
     console.log("\n📋 Test Data Summary:");
     console.log(`👤 User: ${user.email}`);
     console.log(`💳 Checkout Session: ${checkoutSession.id}`);
     console.log(`🏢 Company: ${companyInfo.companyName}`);
-    console.log(`📄 Agreement: ${agreement.docusign_envelope_id}`);
-    console.log(`🔗 Zoho ID: ${zohoLink.zoho_id}`);
-    console.log(`📋 Sales Order: ${salesOrder.order_number}`);
-    console.log(`🔗 Magic Link: ${signupLink.login_code}`);
+    console.log(`📄 Agreement: ${agreement.envelopeId}`);
+    console.log(`🔗 Zoho ID: ${zohoLink.zohoUserId}`);
+    console.log(`📋 Sales Order: ${salesOrder.zohoSalesOrderId}`);
+    // console.log(`🔗 Magic Link: ${signupLink.login_code}`);
 
     console.log("\n🔗 Test URLs:");
     console.log(`Dashboard: http://localhost:3000/dashboard`);
-    console.log(
-      `Magic Link: http://localhost:3000/magic-link/${zohoLink.zoho_id}/${signupLink.login_code}`,
-    );
-    console.log(
-      `CRM API: http://localhost:3000/api/crm/${zohoLink.zoho_id}/${signupLink.login_code}`,
-    );
+    // console.log(
+    //   `Magic Link: http://localhost:3000/magic-link/${zohoLink.zoho_id}/${signupLink.login_code}`,
+    // );
+    // console.log(
+    //   `CRM API: http://localhost:3000/api/crm/${zohoLink.zoho_id}/${signupLink.login_code}`,
+    // );
   } catch (error) {
     console.error("❌ Error setting up test data:", error);
     throw error;
@@ -176,24 +179,24 @@ async function setupTestData() {
 async function cleanupTestData() {
   try {
     // Delete in reverse order to respect foreign key constraints
-    await prisma.signupLink.deleteMany({
-      where: { zoho_id: { startsWith: "test-" } },
-    });
+    // await prisma.signupLink.deleteMany({
+    //   where: { zoho_id: { startsWith: "test-" } },
+    // });
 
     await prisma.salesOrder.deleteMany({
-      where: { zoho_id: { startsWith: "test-" } },
+      where: { zohoSalesOrderId: { startsWith: "test-" } },
     });
 
     await prisma.zohoAccountLink.deleteMany({
-      where: { zoho_id: { startsWith: "test-" } },
+      where: { zohoUserId: { startsWith: "test-" } },
     });
 
-    await prisma.agreement.deleteMany({
-      where: { checkout_session_id: { startsWith: "test-" } },
+    await prisma.agreementSignatureStatus.deleteMany({
+      where: { checkoutSessionId: { startsWith: "test-" } },
     });
 
     await prisma.companyInfo.deleteMany({
-      where: { checkout_session_id: { startsWith: "test-" } },
+      where: { checkoutSessionId: { startsWith: "test-" } },
     });
 
     await prisma.checkoutSession.deleteMany({

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -33,47 +34,35 @@ export async function POST(req: NextRequest) {
     // Handle different event types
     switch (event.type) {
       case "payment_intent.succeeded":
-        await handlePaymentIntentSucceeded(
-          event.data.object as Stripe.PaymentIntent,
-        );
+        await handlePaymentIntentSucceeded(event.data.object);
         break;
 
       case "payment_intent.payment_failed":
-        await handlePaymentIntentFailed(
-          event.data.object as Stripe.PaymentIntent,
-        );
+        await handlePaymentIntentFailed(event.data.object);
         break;
 
       case "payment_intent.canceled":
-        await handlePaymentIntentCanceled(
-          event.data.object as Stripe.PaymentIntent,
-        );
+        await handlePaymentIntentCanceled(event.data.object);
         break;
 
       case "charge.succeeded":
-        await handleChargeSucceeded(event.data.object as Stripe.Charge);
+        await handleChargeSucceeded(event.data.object);
         break;
 
       case "charge.failed":
-        await handleChargeFailed(event.data.object as Stripe.Charge);
+        await handleChargeFailed(event.data.object);
         break;
 
       case "customer.subscription.created":
-        await handleSubscriptionCreated(
-          event.data.object as Stripe.Subscription,
-        );
+        await handleSubscriptionCreated(event.data.object);
         break;
 
       case "customer.subscription.updated":
-        await handleSubscriptionUpdated(
-          event.data.object as Stripe.Subscription,
-        );
+        await handleSubscriptionUpdated(event.data.object);
         break;
 
       case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription,
-        );
+        await handleSubscriptionDeleted(event.data.object);
         break;
 
       default:
@@ -106,7 +95,7 @@ async function handlePaymentIntentSucceeded(
 
   // Example: Provision Zoho integration modules
   if (metadata.module_type === "zoho_integration") {
-    const quantity = parseInt(metadata.quantity || "1");
+    const quantity = parseInt(metadata.quantity ?? "1");
     console.log(
       `Provisioning ${quantity} Zoho integration modules for ${metadata.email}`,
     );

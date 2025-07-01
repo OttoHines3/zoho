@@ -1,9 +1,30 @@
 import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createCaller } from "~/server/api/root";
-import { createContext } from "~/server/api/trpc";
+import { db } from "~/server/db";
+import { auth } from "~/server/auth";
+import type { AppRouter } from "~/server/api/root";
 
 const webhookSecret = process.env.DOCUSIGN_WEBHOOK_SECRET!;
+
+// Add type for event
+type DocuSignEvent = {
+  event: string;
+  data: { envelopeId: string; [key: string]: unknown };
+};
+
+// Add type guard for DocuSignEvent
+function isDocuSignEvent(event: unknown): event is DocuSignEvent {
+  if (typeof event !== "object" || event === null) return false;
+  const e = event as Record<string, unknown>;
+  return (
+    typeof e.event === "string" &&
+    typeof e.data === "object" &&
+    e.data !== null &&
+    typeof (e.data as Record<string, unknown>).envelopeId === "string"
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,12 +45,19 @@ export async function POST(req: NextRequest) {
     //   return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     // }
 
-    const event = JSON.parse(body);
+    const rawEvent: unknown = JSON.parse(body);
+    if (!isDocuSignEvent(rawEvent)) {
+      return NextResponse.json(
+        { error: "Invalid DocuSign event payload" },
+        { status: 400 },
+      );
+    }
+    const event = rawEvent;
     console.log("DocuSign webhook event:", event);
 
     // Create tRPC caller for database updates
-    const ctx = await createContext({ headers: headersList });
-    const caller = createCaller(ctx);
+    const session = await auth();
+    const caller = createCaller({ db, session, headers: headersList });
 
     // Handle different DocuSign event types
     switch (event.event) {
@@ -67,7 +95,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function handleEnvelopeSent(caller: any, event: any) {
+async function handleEnvelopeSent(
+  caller: ReturnType<typeof createCaller>,
+  event: DocuSignEvent,
+) {
   console.log("Envelope sent:", event.data.envelopeId);
 
   // Update agreement status to 'sent'
@@ -82,7 +113,10 @@ async function handleEnvelopeSent(caller: any, event: any) {
   }
 }
 
-async function handleRecipientCompleted(caller: any, event: any) {
+async function handleRecipientCompleted(
+  caller: ReturnType<typeof createCaller>,
+  event: DocuSignEvent,
+) {
   console.log("Recipient completed signing:", event.data.envelopeId);
 
   // Update agreement status to 'partially_signed'
@@ -97,7 +131,10 @@ async function handleRecipientCompleted(caller: any, event: any) {
   }
 }
 
-async function handleEnvelopeCompleted(caller: any, event: any) {
+async function handleEnvelopeCompleted(
+  caller: ReturnType<typeof createCaller>,
+  event: DocuSignEvent,
+) {
   console.log("Envelope completed:", event.data.envelopeId);
 
   // Update agreement status to 'completed' and trigger next steps
@@ -117,7 +154,10 @@ async function handleEnvelopeCompleted(caller: any, event: any) {
   }
 }
 
-async function handleEnvelopeDeclined(caller: any, event: any) {
+async function handleEnvelopeDeclined(
+  caller: ReturnType<typeof createCaller>,
+  event: DocuSignEvent,
+) {
   console.log("Envelope declined:", event.data.envelopeId);
 
   // Update agreement status to 'declined'
@@ -132,7 +172,10 @@ async function handleEnvelopeDeclined(caller: any, event: any) {
   }
 }
 
-async function handleEnvelopeVoided(caller: any, event: any) {
+async function handleEnvelopeVoided(
+  caller: ReturnType<typeof createCaller>,
+  event: DocuSignEvent,
+) {
   console.log("Envelope voided:", event.data.envelopeId);
 
   // Update agreement status to 'voided'

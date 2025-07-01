@@ -8,6 +8,29 @@ import { Separator } from "~/components/ui/separator"
 import { Check, Clock, DollarSign, Building, User, Users, ExternalLink } from "lucide-react"
 import { api } from "~/trpc/react"
 
+// Add explicit interfaces for CRM data
+interface ZohoContact {
+    id: string;
+    Company?: string;
+    [key: string]: unknown;
+}
+interface ZohoSalesOrder {
+    id: string;
+    [key: string]: unknown;
+}
+interface ZohoDeal {
+    id: string;
+    [key: string]: unknown;
+}
+interface ZohoTask {
+    id: string;
+    [key: string]: unknown;
+}
+interface ZohoNote {
+    id: string;
+    [key: string]: unknown;
+}
+
 export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState("sessions")
 
@@ -498,7 +521,7 @@ export default function DashboardPage() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-3">
-                                                {crmData.data.salesOrders.map((order: any, index: number) => (
+                                                {crmData.data.salesOrders.map((order: ZohoSalesOrder, index: number) => (
                                                     <div key={index} className="border rounded-lg p-3">
                                                         <div className="flex justify-between items-start">
                                                             <div>
@@ -527,7 +550,7 @@ export default function DashboardPage() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-3">
-                                                {crmData.data.deals.map((deal: any, index: number) => (
+                                                {crmData.data.deals.map((deal: ZohoDeal, index: number) => (
                                                     <div key={index} className="border rounded-lg p-3">
                                                         <div className="flex justify-between items-start">
                                                             <div>
@@ -556,7 +579,7 @@ export default function DashboardPage() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-3">
-                                                {crmData.data.tasks.map((task: any, index: number) => (
+                                                {crmData.data.tasks.map((task: ZohoTask, index: number) => (
                                                     <div key={index} className="border rounded-lg p-3">
                                                         <div className="flex justify-between items-start">
                                                             <div>
@@ -585,7 +608,7 @@ export default function DashboardPage() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-3">
-                                                {crmData.data.notes.map((note: any, index: number) => (
+                                                {crmData.data.notes.map((note: ZohoNote, index: number) => (
                                                     <div key={index} className="border rounded-lg p-3">
                                                         <p className="font-medium">{note.Note_Title}</p>
                                                         <p className="text-sm text-gray-600 mt-1">{note.Note_Content}</p>

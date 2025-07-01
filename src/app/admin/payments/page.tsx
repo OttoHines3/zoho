@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { Separator } from "~/components/ui/separator"
 import { Check, DollarSign, RefreshCw, X, AlertCircle } from "lucide-react"
 import { api } from "~/trpc/react"
 
@@ -14,7 +13,7 @@ export default function AdminPaymentsPage() {
     const [paymentIntentId, setPaymentIntentId] = useState("")
     const [captureAmount, setCaptureAmount] = useState("")
     const [refundAmount, setRefundAmount] = useState("")
-    const [refundReason, setRefundReason] = useState("")
+    const [refundReason, setRefundReason] = useState<"duplicate" | "fraudulent" | "requested_by_customer" | "">("")
     const [loading, setLoading] = useState(false)
 
     const getPaymentStatus = api.checkout.getPaymentStatus.useQuery(
@@ -55,7 +54,7 @@ export default function AdminPaymentsPage() {
             await refundPayment.mutateAsync({
                 paymentIntentId,
                 amount,
-                reason: refundReason as any,
+                reason: refundReason ? refundReason : undefined,
             })
 
             // Refresh payment status
@@ -258,7 +257,7 @@ export default function AdminPaymentsPage() {
                                         </div>
                                         <div>
                                             <Label htmlFor="refundReason">Reason</Label>
-                                            <Select value={refundReason} onValueChange={setRefundReason}>
+                                            <Select value={refundReason} onValueChange={value => setRefundReason(value as "duplicate" | "fraudulent" | "requested_by_customer" | "")}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select reason" />
                                                 </SelectTrigger>
@@ -294,15 +293,15 @@ export default function AdminPaymentsPage() {
                     )}
 
                     {/* Error Display */}
-                    {(getPaymentStatus.error || capturePayment.error || refundPayment.error) && (
+                    {(getPaymentStatus.error ?? capturePayment.error ?? refundPayment.error) && (
                         <Card className="border-red-200 bg-red-50">
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-2 text-red-700">
                                     <AlertCircle className="h-4 w-4" />
                                     <span className="font-medium">Error:</span>
                                     <span>
-                                        {getPaymentStatus.error?.message ||
-                                            capturePayment.error?.message ||
+                                        {getPaymentStatus.error?.message ??
+                                            capturePayment.error?.message ??
                                             refundPayment.error?.message}
                                     </span>
                                 </div>

@@ -44,12 +44,38 @@ interface ZohoSalesOrderData {
   trigger?: string[];
 }
 
+interface ZohoContact {
+  id: string;
+  Company?: string;
+  [key: string]: unknown;
+}
+
+interface ZohoSalesOrder {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface ZohoDeal {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface ZohoTask {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface ZohoNote {
+  id: string;
+  [key: string]: unknown;
+}
+
 interface CRMData {
-  contact: any;
-  salesOrders: any[];
-  deals: any[];
-  tasks: any[];
-  notes: any[];
+  contact: ZohoContact | null;
+  salesOrders: ZohoSalesOrder[];
+  deals: ZohoDeal[];
+  tasks: ZohoTask[];
+  notes: ZohoNote[];
 }
 
 interface SignupLinkData {

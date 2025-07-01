@@ -1,47 +1,38 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-  // Further reading:
-  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
   url      = env("DATABASE_URL")
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  createdBy   User   @relation(fields: [createdById], references: [id])
+  id          Int      @id @default(autoincrement())
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
 
   @@index([name])
 }
 
-// Necessary for Next auth
 model Account {
   id                       String  @id @default(cuid())
   userId                   String
   type                     String
   provider                 String
   providerAccountId        String
-  refresh_token            String? // @db.Text
-  access_token             String? // @db.Text
+  refresh_token            String?
+  access_token             String?
   expires_at               Int?
   token_type               String?
   scope                    String?
-  id_token                 String? // @db.Text
+  id_token                 String?
   session_state            String?
-  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   refresh_token_expires_in Int?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -60,11 +51,11 @@ model User {
   email            String?           @unique
   emailVerified    DateTime?
   image            String?
-  password         String?           // Hashed password for credentials auth
+  password         String?
   accounts         Account[]
-  sessions         Session[]
-  posts            Post[]
   checkoutSessions CheckoutSession[]
+  posts            Post[]
+  sessions         Session[]
   zohoAccountLink  ZohoAccountLink?
 }
 
@@ -76,59 +67,56 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// --- Custom Models for Zoho Integration Workflow ---
-
 model CheckoutSession {
-  id         String                    @id @default(cuid())
-  user       User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  createdAt  DateTime                  @default(now())
-  updatedAt  DateTime                  @updatedAt
-  status     String // e.g. 'pending', 'completed', etc.
-  module     String? // What module/product is being checked out
-  cardLast4  String? // Last 4 digits of card used
-  salesOrder SalesOrder?
-  agreement  AgreementSignatureStatus?
+  id          String                    @id @default(cuid())
+  userId      String
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  status      String
+  module      String?
+  cardLast4   String?
+  agreement   AgreementSignatureStatus?
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyInfo CompanyInfo?
+  salesOrder  SalesOrder?
 }
 
 model ZohoAccountLink {
   id           String   @id @default(cuid())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String   @unique
-  zohoUserId   String // Zoho CRM user/contact ID
-  orgId        String? // Zoho organization ID
-  refreshToken String? // Zoho OAuth refresh token
+  zohoUserId   String
+  orgId        String?
+  refreshToken String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SalesOrder {
   id                String          @id @default(cuid())
-  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
   checkoutSessionId String          @unique
-  zohoSalesOrderId  String? // Zoho CRM sales order ID
+  zohoSalesOrderId  String?
   amount            Float
   currency          String
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
 }
 
 model AgreementSignatureStatus {
   id                String          @id @default(cuid())
-  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
   checkoutSessionId String          @unique
-  provider          String // 'DocuSign', 'PandaDoc', etc.
-  envelopeId        String? // Envelope/document ID from provider
-  status            String // 'pending', 'signed', 'declined', etc.
+  provider          String
+  envelopeId        String?
+  status            String
   completedAt       DateTime?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
 }
 
 model CompanyInfo {
   id                String          @id @default(cuid())
-  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
   checkoutSessionId String          @unique
   companyName       String
   contactName       String
@@ -138,25 +126,10 @@ model CompanyInfo {
   city              String?
   state             String?
   zipCode           String?
-  country           String?          @default("US")
+  country           String?         @default("US")
   industry          String?
   companySize       String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-}
-
-model SignupLink {
-  id          String   @id @default(cuid())
-  zohoId      String   // Zoho contact ID
-  loginCode   String   // Secure login code for magic links
-  expiresAt   DateTime // When the link expires
-  maxUses     Int      @default(1) // Maximum number of times the link can be used
-  currentUses Int      @default(0) // Current number of times the link has been used
-  isActive    Boolean  @default(true) // Whether the link is still active
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([zohoId, loginCode])
-  @@index([zohoId])
-  @@index([loginCode])
+  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
 }

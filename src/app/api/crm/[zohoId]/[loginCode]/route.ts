@@ -1,260 +1,123 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-// Zoho API configuration
+/* ─────────────────────────  constants  ───────────────────────── */
 const ZOHO_BASE_URL = "https://www.zohoapis.com/crm/v3";
-const ZOHO_ACCESS_TOKEN = process.env.ZOHO_ACCESS_TOKEN;
+const ZOHO_TOKEN = process.env.ZOHO_ACCESS_TOKEN; // pk_123…
 
-// Validation schema for the request
+/* ────────────────────────  query schema  ─────────────────────── */
 const querySchema = z.object({
   includeSalesOrders: z
     .string()
     .optional()
-    .transform((val) => val === "true"),
+    .transform((v) => v === "true"),
   includeDeals: z
     .string()
     .optional()
-    .transform((val) => val === "true"),
+    .transform((v) => v === "true"),
   includeTasks: z
     .string()
     .optional()
-    .transform((val) => val === "true"),
+    .transform((v) => v === "true"),
   includeNotes: z
     .string()
     .optional()
-    .transform((val) => val === "true"),
+    .transform((v) => v === "true"),
 });
 
-interface CRMData {
-  contact: any;
-  salesOrders: any[];
-  deals: any[];
-  tasks: any[];
-  notes: any[];
+/* ────────────────────────  util types  ───────────────────────── */
+interface ZohoEntity {
+  id: string;
+  [k: string]: unknown;
 }
+type ZohoArray = { data: unknown[] };
 
+const isZohoArray = (x: unknown): x is ZohoArray =>
+  !!x && typeof x === "object" && Array.isArray((x as any).data);
+const isWithId = (x: unknown): x is ZohoEntity =>
+  !!x && typeof x === "object" && typeof (x as any).id === "string";
+
+/* ──────────────────────────  handler  ────────────────────────── */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { zohoId: string; loginCode: string } },
+  req: NextRequest,
+  { params }: { params: { zohoId: string; loginCode: string } }, // ✅ correct ctx
 ) {
-  try {
-    // 1. Validate parameters
-    const { zohoId, loginCode } = params;
-
-    if (!zohoId || !loginCode) {
-      return NextResponse.json(
-        { error: "Missing required parameters: zohoId and loginCode" },
-        { status: 400 },
-      );
-    }
-
-    // 2. Parse query parameters
-    const url = new URL(request.url);
-    const queryParams = querySchema.parse(Object.fromEntries(url.searchParams));
-
-    // 3. Validate login code (you might want to add your own validation logic here)
-    // For now, we'll assume the login code is valid if it's provided
-    if (!loginCode || loginCode.length < 6) {
-      return NextResponse.json(
-        { error: "Invalid login code" },
-        { status: 401 },
-      );
-    }
-
-    // 4. Fetch comprehensive CRM data
-    const crmData: CRMData = {
-      contact: null,
-      salesOrders: [],
-      deals: [],
-      tasks: [],
-      notes: [],
-    };
-
-    // 5. Fetch contact details
-    try {
-      const contactResponse = await getZohoContact(zohoId);
-      crmData.contact = contactResponse.data?.[0] || null;
-    } catch (error) {
-      console.error("Error fetching contact:", error);
-      return NextResponse.json(
-        { error: "Contact not found or access denied" },
-        { status: 404 },
-      );
-    }
-
-    // 6. Fetch sales orders (if requested)
-    if (queryParams.includeSalesOrders) {
-      try {
-        const salesOrdersResponse = await searchZohoSalesOrders(
-          `(Contact_Name:equals:${zohoId})`,
-        );
-        crmData.salesOrders = salesOrdersResponse.data || [];
-      } catch (error) {
-        console.error("Error fetching sales orders:", error);
-      }
-    }
-
-    // 7. Fetch deals (if requested)
-    if (queryParams.includeDeals) {
-      try {
-        const dealsResponse = await searchZohoDeals(
-          `(Contact_Name:equals:${zohoId})`,
-        );
-        crmData.deals = dealsResponse.data || [];
-      } catch (error) {
-        console.error("Error fetching deals:", error);
-      }
-    }
-
-    // 8. Fetch tasks (if requested)
-    if (queryParams.includeTasks) {
-      try {
-        const tasksResponse = await searchZohoTasks(
-          `(Who_Id:equals:${zohoId})`,
-        );
-        crmData.tasks = tasksResponse.data || [];
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      }
-    }
-
-    // 9. Fetch notes (if requested)
-    if (queryParams.includeNotes) {
-      try {
-        const notesResponse = await searchZohoNotes(
-          `(Parent_Id:equals:${zohoId})`,
-        );
-        crmData.notes = notesResponse.data || [];
-      } catch (error) {
-        console.error("Error fetching notes:", error);
-      }
-    }
-
-    // 10. Return the CRM data
-    return NextResponse.json({
-      success: true,
-      data: crmData,
-      message: "CRM data fetched successfully",
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error("Error in CRM data endpoint:", error);
+  if (!ZOHO_TOKEN) {
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Zoho token not configured" },
       { status: 500 },
     );
   }
-}
 
-// Helper functions for Zoho API calls
-async function getZohoContact(contactId: string) {
-  if (!ZOHO_ACCESS_TOKEN) {
-    throw new Error("Zoho access token not configured");
+  const { zohoId, loginCode } = params;
+  if (!zohoId || loginCode.length < 6) {
+    return NextResponse.json(
+      { error: "Invalid zohoId or loginCode" },
+      { status: 400 },
+    );
   }
 
-  const response = await fetch(`${ZOHO_BASE_URL}/Contacts/${contactId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Zoho-oauthtoken ${ZOHO_ACCESS_TOKEN}`,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Zoho API error: ${error}`);
-  }
-
-  return response.json();
-}
-
-async function searchZohoSalesOrders(searchQuery: string) {
-  if (!ZOHO_ACCESS_TOKEN) {
-    throw new Error("Zoho access token not configured");
-  }
-
-  const response = await fetch(
-    `${ZOHO_BASE_URL}/Sales_Orders/search?criteria=${encodeURIComponent(searchQuery)}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Zoho-oauthtoken ${ZOHO_ACCESS_TOKEN}`,
-      },
-    },
+  /* ── parse feature flags ── */
+  const qs = querySchema.parse(
+    Object.fromEntries(new URL(req.url).searchParams),
   );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Zoho API error: ${error}`);
+  /* ── base object ── */
+  const out = {
+    contact: null as ZohoEntity | null,
+    salesOrders: [] as ZohoEntity[],
+    deals: [] as ZohoEntity[],
+    tasks: [] as ZohoEntity[],
+    notes: [] as ZohoEntity[],
+  };
+
+  /* ── fetch helpers ── */
+  const zFetch = async (path: string) => {
+    const r = await fetch(`${ZOHO_BASE_URL}${path}`, {
+      headers: { Authorization: `Zoho-oauthtoken ${ZOHO_TOKEN}` },
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json() as Promise<unknown>;
+  };
+
+  try {
+    /* contact */
+    const contactRes = await zFetch(`/Contacts/${zohoId}`);
+    if (isZohoArray(contactRes) && isWithId(contactRes.data[0]))
+      out.contact = contactRes.data[0];
+
+    /* optional entities */
+    if (qs.includeSalesOrders) {
+      const so = await zFetch(
+        `/Sales_Orders/search?criteria=${encodeURIComponent(`(Contact_Name:equals:${zohoId})`)}`,
+      );
+      if (isZohoArray(so)) out.salesOrders = so.data.filter(isWithId);
+    }
+    if (qs.includeDeals) {
+      const dl = await zFetch(
+        `/Deals/search?criteria=${encodeURIComponent(`(Contact_Name:equals:${zohoId})`)}`,
+      );
+      if (isZohoArray(dl)) out.deals = dl.data.filter(isWithId);
+    }
+    if (qs.includeTasks) {
+      const tk = await zFetch(
+        `/Tasks/search?criteria=${encodeURIComponent(`(Who_Id:equals:${zohoId})`)}`,
+      );
+      if (isZohoArray(tk)) out.tasks = tk.data.filter(isWithId);
+    }
+    if (qs.includeNotes) {
+      const nt = await zFetch(
+        `/Notes/search?criteria=${encodeURIComponent(`(Parent_Id:equals:${zohoId})`)}`,
+      );
+      if (isZohoArray(nt)) out.notes = nt.data.filter(isWithId);
+    }
+
+    return NextResponse.json({ success: true, data: out, ts: Date.now() });
+  } catch (err) {
+    console.error("Zoho API error:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch CRM data" },
+      { status: 502 },
+    );
   }
-
-  return response.json();
-}
-
-async function searchZohoDeals(searchQuery: string) {
-  if (!ZOHO_ACCESS_TOKEN) {
-    throw new Error("Zoho access token not configured");
-  }
-
-  const response = await fetch(
-    `${ZOHO_BASE_URL}/Deals/search?criteria=${encodeURIComponent(searchQuery)}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Zoho-oauthtoken ${ZOHO_ACCESS_TOKEN}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Zoho API error: ${error}`);
-  }
-
-  return response.json();
-}
-
-async function searchZohoTasks(searchQuery: string) {
-  if (!ZOHO_ACCESS_TOKEN) {
-    throw new Error("Zoho access token not configured");
-  }
-
-  const response = await fetch(
-    `${ZOHO_BASE_URL}/Tasks/search?criteria=${encodeURIComponent(searchQuery)}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Zoho-oauthtoken ${ZOHO_ACCESS_TOKEN}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Zoho API error: ${error}`);
-  }
-
-  return response.json();
-}
-
-async function searchZohoNotes(searchQuery: string) {
-  if (!ZOHO_ACCESS_TOKEN) {
-    throw new Error("Zoho access token not configured");
-  }
-
-  const response = await fetch(
-    `${ZOHO_BASE_URL}/Notes/search?criteria=${encodeURIComponent(searchQuery)}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Zoho-oauthtoken ${ZOHO_ACCESS_TOKEN}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Zoho API error: ${error}`);
-  }
-
-  return response.json();
 }

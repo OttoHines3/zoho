@@ -20,9 +20,9 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "test:setup": "node setup-test-data.js setup",
-    "test:cleanup": "node setup-test-data.js cleanup",
-    "test:magic-link": "node setup-test-data.js magic-link",
+    "test:setup": "node setup-test-data.cjs setup",
+    "test:cleanup": "node setup-test-data.cjs cleanup",
+    "test:magic-link": "node setup-test-data.cjs magic-link",
     "test:quick-start": "./test-quick-start.sh",
     "typecheck": "tsc --noEmit"
   },

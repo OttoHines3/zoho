@@ -7,10 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Check, Download, Mail, Settings, Users } from "lucide-react"
 import { api } from "~/trpc/react"
 
+interface PaymentDetails {
+    paymentIntentId?: string;
+    amount?: number;
+    status?: string;
+    created?: number;
+    quantity?: number;
+    email?: string;
+    metadata?: {
+        quantity?: number;
+        email?: string;
+    };
+}
+
+function isPaymentDetails(obj: unknown): obj is PaymentDetails {
+    return typeof obj === 'object' && obj !== null;
+}
+
 export default function PaymentSuccessPage() {
     const searchParams = useSearchParams()
     const paymentIntentId = searchParams.get("payment_intent")
-    const [paymentDetails, setPaymentDetails] = useState<any>(null)
+    const [paymentDetails, setPaymentDetails] = useState<unknown>(null)
     const [loading, setLoading] = useState(true)
 
     const getPaymentStatus = api.checkout.getPaymentStatus.useQuery(
@@ -118,31 +135,33 @@ export default function PaymentSuccessPage() {
                             <CardContent className="space-y-4">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Payment ID:</span>
-                                    <span className="font-mono text-sm">{paymentDetails.paymentIntentId}</span>
+                                    <span className="font-mono text-sm">{isPaymentDetails(paymentDetails) && paymentDetails.paymentIntentId}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Amount:</span>
-                                    <span className="font-semibold">{formatAmount(paymentDetails.amount)}</span>
+                                    <span className="font-semibold">{isPaymentDetails(paymentDetails) && paymentDetails.amount !== undefined && formatAmount(paymentDetails.amount)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Status:</span>
-                                    <span className="text-green-600 font-semibold capitalize">{paymentDetails.status}</span>
+                                    <span className="text-green-600 font-semibold capitalize">{isPaymentDetails(paymentDetails) && paymentDetails.status}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Date:</span>
-                                    <span>{new Date(paymentDetails.created * 1000).toLocaleDateString()}</span>
+                                    {isPaymentDetails(paymentDetails) && paymentDetails.created !== undefined && (
+                                        <span>{new Date(paymentDetails.created * 1000).toLocaleDateString()}</span>
+                                    )}
                                 </div>
-                                {paymentDetails.metadata && (
+                                {isPaymentDetails(paymentDetails) && paymentDetails.metadata && (
                                     <div className="pt-4 border-t">
                                         <h4 className="font-semibold mb-2">Order Details</h4>
                                         <div className="space-y-1 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Modules:</span>
-                                                <span>{paymentDetails.metadata.quantity} Zoho Integration Module(s)</span>
+                                                <span>{isPaymentDetails(paymentDetails) && paymentDetails.metadata.quantity} Zoho Integration Module(s)</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Email:</span>
-                                                <span>{paymentDetails.metadata.email}</span>
+                                                <span>{isPaymentDetails(paymentDetails) && paymentDetails.metadata.email}</span>
                                             </div>
                                         </div>
                                     </div>

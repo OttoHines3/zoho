@@ -11,6 +11,7 @@ import { Check, CreditCard, Lock, Minus, Plus, Shield } from "lucide-react"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { api } from "~/trpc/react"
+import type { Stripe } from '@stripe/stripe-js';
 
 // Validate Stripe publishable key
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -23,7 +24,7 @@ if (!stripePublishableKey.startsWith("pk_")) {
     throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must start with 'pk_'")
 }
 
-const stripePromise = loadStripe(stripePublishableKey) as any
+const stripePromise = loadStripe(stripePublishableKey);
 
 function CheckoutForm() {
     const [quantity, setQuantity] = useState(6)
@@ -34,8 +35,8 @@ function CheckoutForm() {
     const [country, setCountry] = useState("US")
     const [zipCode, setZipCode] = useState("")
 
-    const stripe = useStripe() as any
-    const elements = useElements() as any
+    const stripe = useStripe()
+    const elements = useElements()
 
     const createPaymentIntent = api.checkout.createPaymentIntent.useMutation()
     const createCheckoutSession = api.checkoutSession.create.useMutation()
