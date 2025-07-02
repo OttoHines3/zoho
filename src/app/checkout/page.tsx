@@ -1,89 +1,108 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useCart } from "~/lib/cart-context";
 import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { useCart } from "~/lib/cart-context";
+
+interface FormData {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    sameAsBilling: boolean;
+}
 
 export default function CheckoutPage() {
     const router = useRouter();
     const { data: session } = useSession();
     const { state } = useCart();
     const [isLoading, setIsLoading] = useState(false);
-    const [shippingMethod, setShippingMethod] = useState("standard");
     const [error, setError] = useState("");
-
-    // Redirect to sign in if not authenticated
-    useEffect(() => {
-        if (!session) {
-            router.push("/signin?returnUrl=/checkout");
-        }
-    }, [session, router]);
-
-    // Redirect if cart is empty
-    useEffect(() => {
-        if (state.items.length === 0) {
-            router.push("/");
-        }
-    }, [state.items, router]);
-
-    const [formData, setFormData] = useState({
-        fullname: "",
+    const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
+    const [formData, setFormData] = useState<FormData>({
+        name: "",
+        email: "",
         phone: "",
-        address1: "",
-        address2: "",
+        address: "",
         city: "",
-        zipCode: "",
-        country: "Philippines",
+        state: "",
+        zip: "",
+        country: "",
         sameAsBilling: true,
     });
+
+    const getShippingFee = () => {
+        return shippingMethod === "standard" ? 10 : 15;
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === "checkbox" ? checked : value
+            [name]: type === "checkbox" ? checked : value,
         }));
     };
-
-    const getShippingFee = () => shippingMethod === "standard" ? 10 : 15;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
 
+        if (!session?.user) {
+            router.push("/signin?returnUrl=/checkout");
+            return;
+        }
+
         try {
-            // TODO: Implement your payment processing logic here
-            // For example:
-            // 1. Validate the form data
-            // 2. Create a payment intent with your payment provider
-            // 3. Process the payment
-            // 4. Create the order in your database
-            // 5. Clear the cart
-            // 6. Redirect to success page
-
-            const orderData = {
-                items: state.items,
-                shipping: {
-                    ...formData,
-                    method: shippingMethod,
-                    fee: getShippingFee(),
+            // Create invoice in Zoho Billing
+            const response = await fetch("/api/billing/create-invoice", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-                total: state.total + getShippingFee(),
-                user: session?.user,
-            };
+                body: JSON.stringify({
+                    items: [
+                        ...state.items.map(item => ({
+                            name: item.name,
+                            description: item.description,
+                            price: item.price,
+                            quantity: item.quantity,
+                        })),
+                        {
+                            name: `${shippingMethod === "standard" ? "Standard" : "Express"} Shipping`,
+                            price: getShippingFee(),
+                            quantity: 1,
+                        },
+                    ],
+                    shippingDetails: {
+                        name: formData.name,
+                        address: formData.address,
+                        city: formData.city,
+                        state: formData.state,
+                        zip: formData.zip,
+                        country: formData.country,
+                    },
+                }),
+            });
 
-            console.log("Processing order:", orderData);
+            if (!response.ok) {
+                throw new Error("Failed to create invoice");
+            }
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const { invoiceId } = await response.json();
 
-            // For now, just redirect to a success page
-            router.push("/checkout/success");
+            // Redirect to Zoho Billing payment page
+            window.location.href = `https://books.zoho.com/app#/invoices/${invoiceId}/pay`;
         } catch (err) {
             console.error("Checkout error:", err);
             setError("An error occurred while processing your order. Please try again.");
@@ -93,182 +112,203 @@ export default function CheckoutPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg">
-                        {error}
-                    </div>
-                )}
-                <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-8">
-                    {/* Shipping Form */}
-                    <div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h2 className="text-xl font-semibold mb-6">Shipping Address</h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="fullname">Fullname *</Label>
-                                    <Input
-                                        id="fullname"
-                                        name="fullname"
-                                        value={formData.fullname}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
+                <div className="max-w-3xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 
-                                <div>
-                                    <Label htmlFor="phone">Phone</Label>
-                                    <Input
-                                        id="phone"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+                            {error}
+                        </div>
+                    )}
 
-                                <div>
-                                    <Label htmlFor="address1">Address 1 *</Label>
-                                    <Input
-                                        id="address1"
-                                        name="address1"
-                                        value={formData.address1}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {/* Shipping Information */}
+                        <div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Shipping Information</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleSubmit} className="space-y-4">
+                                        <div>
+                                            <Label htmlFor="name">Full Name</Label>
+                                            <Input
+                                                id="name"
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
 
-                                <div>
-                                    <Label htmlFor="address2">Address 2</Label>
-                                    <Input
-                                        id="address2"
-                                        name="address2"
-                                        value={formData.address2}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
+                                        <div>
+                                            <Label htmlFor="email">Email</Label>
+                                            <Input
+                                                id="email"
+                                                name="email"
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="city">City *</Label>
-                                        <Input
-                                            id="city"
-                                            name="city"
-                                            value={formData.city}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="zipCode">Zip Code *</Label>
-                                        <Input
-                                            id="zipCode"
-                                            name="zipCode"
-                                            value={formData.zipCode}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                                        <div>
+                                            <Label htmlFor="phone">Phone</Label>
+                                            <Input
+                                                id="phone"
+                                                name="phone"
+                                                type="tel"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
 
-                                <div>
-                                    <Label htmlFor="country">Country *</Label>
-                                    <Input
-                                        id="country"
-                                        name="country"
-                                        value={formData.country}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
+                                        <div>
+                                            <Label htmlFor="address">Address</Label>
+                                            <Input
+                                                id="address"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
 
-                                <div className="mt-6">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="sameAsBilling"
-                                            checked={formData.sameAsBilling}
-                                            onChange={handleInputChange}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <span className="ml-2">Same as shipping for billing</span>
-                                    </label>
-                                </div>
-                            </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="city">City</Label>
+                                                <Input
+                                                    id="city"
+                                                    name="city"
+                                                    value={formData.city}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="state">State</Label>
+                                                <Input
+                                                    id="state"
+                                                    name="state"
+                                                    value={formData.state}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="zip">ZIP Code</Label>
+                                                <Input
+                                                    id="zip"
+                                                    name="zip"
+                                                    value={formData.zip}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="country">Country</Label>
+                                                <Input
+                                                    id="country"
+                                                    name="country"
+                                                    value={formData.country}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <Label>Shipping Method</Label>
+                                            <Select
+                                                value={shippingMethod}
+                                                onValueChange={(value: "standard" | "express") => setShippingMethod(value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="standard">
+                                                        Standard Shipping ($10)
+                                                    </SelectItem>
+                                                    <SelectItem value="express">
+                                                        Express Shipping ($15)
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="mt-6">
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    name="sameAsBilling"
+                                                    checked={formData.sameAsBilling}
+                                                    onChange={handleInputChange}
+                                                    className="rounded border-gray-300"
+                                                />
+                                                <span className="ml-2">Same as shipping for billing</span>
+                                            </label>
+                                        </div>
+                                    </form>
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        <div className="bg-white p-6 rounded-lg shadow mt-6">
-                            <h2 className="text-xl font-semibold mb-6">Delivery Method</h2>
-                            <div className="space-y-4">
-                                <label className="flex items-center justify-between p-4 border rounded-lg cursor-pointer">
-                                    <div className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="delivery"
-                                            value="standard"
-                                            checked={shippingMethod === "standard"}
-                                            onChange={(e) => setShippingMethod(e.target.value)}
-                                        />
-                                        <span className="ml-2">Standard Shipping</span>
-                                    </div>
-                                    <span>$10.00</span>
-                                </label>
-                                <label className="flex items-center justify-between p-4 border rounded-lg cursor-pointer">
-                                    <div className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="delivery"
-                                            value="express"
-                                            checked={shippingMethod === "express"}
-                                            onChange={(e) => setShippingMethod(e.target.value)}
-                                        />
-                                        <span className="ml-2">Express Shipping</span>
-                                    </div>
-                                    <span>$15.00</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                        {/* Order Summary */}
+                        <div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Order Summary</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {state.items.map((item) => (
+                                            <div key={item.id} className="flex justify-between text-sm">
+                                                <span>
+                                                    {item.name} x {item.quantity}
+                                                </span>
+                                                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                            </div>
+                                        ))}
 
-                    {/* Order Summary */}
-                    <div className="bg-white p-6 rounded-lg shadow h-fit">
-                        <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
-                        <div className="space-y-4">
-                            {state.items.map((item) => (
-                                <div key={`${item.productId}-${item.variant}`} className="flex justify-between">
-                                    <div>
-                                        <h3 className="font-medium">{item.title}</h3>
-                                        <p className="text-sm text-gray-600">{item.variant}</p>
-                                        <p className="text-sm text-gray-600">x{item.quantity}</p>
+                                        <div className="border-t pt-4">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Subtotal</span>
+                                                <span>${state.total.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm mt-2">
+                                                <span>Shipping</span>
+                                                <span>${getShippingFee().toFixed(2)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <div className="flex justify-between text-lg font-semibold">
+                                                <span>Total</span>
+                                                <span>${(state.total + getShippingFee()).toFixed(2)}</span>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            className="w-full bg-black text-white hover:bg-gray-800"
+                                            onClick={handleSubmit}
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading ? "Processing..." : "Place Order"}
+                                        </Button>
                                     </div>
-                                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
-                                </div>
-                            ))}
-                            <div className="border-t pt-4">
-                                <div className="flex justify-between">
-                                    <span>Subtotal:</span>
-                                    <span>${state.total.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between mt-2">
-                                    <span>Shipping Fee:</span>
-                                    <span>${getShippingFee().toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between mt-2 text-lg font-semibold">
-                                    <span>Total:</span>
-                                    <span>${(state.total + getShippingFee()).toFixed(2)}</span>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
                         </div>
-                        <Button
-                            type="submit"
-                            className="w-full mt-6 bg-black text-white hover:bg-gray-800"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Processing..." : "Place Order"}
-                        </Button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

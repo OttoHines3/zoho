@@ -52,11 +52,13 @@ model User {
   emailVerified    DateTime?
   image            String?
   password         String?
+  zohoCustomerId   String?
   accounts         Account[]
   checkoutSessions CheckoutSession[]
   posts            Post[]
   sessions         Session[]
   zohoAccountLink  ZohoAccountLink?
+  orders           Order[]
 }
 
 model VerificationToken {
@@ -132,4 +134,49 @@ model CompanyInfo {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  status        String    @default("pending") // pending, paid, fulfilled, cancelled
+  total         Float
+  zohoInvoiceId String?   @unique
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+  shippingDetails ShippingDetails?
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  quantity    Int
+
+  // Relations
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+}
+
+model ShippingDetails {
+  id          String    @id @default(cuid())
+  name        String
+  address     String
+  city        String
+  state       String
+  zip         String
+  country     String
+
+  // Relations
+  orderId     String    @unique
+  order       Order     @relation(fields: [orderId], references: [id])
 }

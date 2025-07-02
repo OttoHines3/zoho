@@ -21,6 +21,20 @@ export const env = createEnv({
     ZOHO_CLIENT_SECRET: z.string().optional(),
     ZOHO_REFRESH_TOKEN: z.string().optional(),
     ZOHO_ORG_ID: z.string().optional(),
+
+    // Zoho Billing Configuration
+    ZOHO_BILLING_ORGANIZATION_ID:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
+    ZOHO_BILLING_AUTH_TOKEN:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
+    ZOHO_BILLING_WEBHOOK_SECRET:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
   },
 
   /**
@@ -46,6 +60,11 @@ export const env = createEnv({
     ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET,
     ZOHO_REFRESH_TOKEN: process.env.ZOHO_REFRESH_TOKEN,
     ZOHO_ORG_ID: process.env.ZOHO_ORG_ID,
+
+    // Zoho Billing Configuration
+    ZOHO_BILLING_ORGANIZATION_ID: process.env.ZOHO_BILLING_ORGANIZATION_ID,
+    ZOHO_BILLING_AUTH_TOKEN: process.env.ZOHO_BILLING_AUTH_TOKEN,
+    ZOHO_BILLING_WEBHOOK_SECRET: process.env.ZOHO_BILLING_WEBHOOK_SECRET,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
