@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, User } from "lucide-react";
+import { ShoppingCart, User, LogOut } from "lucide-react";
 import { Button } from "./button";
 import { useCart } from "~/lib/cart-context";
 import { CartDrawer } from "./cart-drawer";
+import { useSession, signOut } from "next-auth/react";
 
 export function NavHeader() {
     const { state } = useCart();
+    const { data: session } = useSession();
     const [isCartOpen, setIsCartOpen] = useState(false);
     const cartItemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -34,12 +36,28 @@ export function NavHeader() {
 
                         {/* Secondary Navigation */}
                         <div className="flex items-center space-x-4">
-                            <Link href="/signin">
-                                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
-                                    <User className="w-5 h-5 mr-2" />
-                                    Login
-                                </Button>
-                            </Link>
+                            {session?.user ? (
+                                <div className="flex items-center space-x-4">
+                                    <span className="text-gray-600">
+                                        {session.user.name ?? session.user.email ?? "User"}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        className="text-gray-600 hover:text-gray-900"
+                                        onClick={() => signOut()}
+                                    >
+                                        <LogOut className="w-5 h-5 mr-2" />
+                                        Logout
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Link href="/signin">
+                                    <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
+                                        <User className="w-5 h-5 mr-2" />
+                                        Login
+                                    </Button>
+                                </Link>
+                            )}
                             <Button
                                 variant="ghost"
                                 className="text-gray-600 hover:text-gray-900 relative"

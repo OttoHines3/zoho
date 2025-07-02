@@ -1,16 +1,9 @@
+"use client";
+
 import "~/styles/globals.css";
-
-import { type Metadata } from "next";
 import { Geist } from "next/font/google";
-import { TRPCReactProvider } from "~/trpc/react";
 import { NavHeader } from "~/components/ui/nav-header";
-import { CartProvider } from "~/lib/cart-context";
-
-export const metadata: Metadata = {
-  title: "Zoho Integration Portal",
-  description: "A modern portal for managing your Zoho integration modules and payments.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
-};
+import { Providers } from "./providers";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -22,13 +15,16 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
+      <head>
+        <title>Zoho Integration Portal</title>
+        <meta name="description" content="A modern portal for managing your Zoho integration modules and payments." />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body>
-        <TRPCReactProvider>
-          <CartProvider>
-            <NavHeader />
-            {children}
-          </CartProvider>
-        </TRPCReactProvider>
+        <Providers>
+          <NavHeader />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -58,11 +58,9 @@ export default function HomePage() {
             <p className="text-xl text-white/90 mb-8">
               Discover powerful integration modules to supercharge your Zoho CRM
             </p>
-            <Link href="/checkout/step-1">
-              <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90">
-                Get Started
-              </Button>
-            </Link>
+            <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90">
+              Browse Modules
+            </Button>
           </div>
         </div>
       </div>

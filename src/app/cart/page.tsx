@@ -153,11 +153,15 @@ export default function CartPage() {
                                         </div>
                                     </div>
 
-                                    <Link href="/checkout/step-1" className="block">
-                                        <Button className="w-full bg-black text-white hover:bg-gray-800">
-                                            Proceed to Checkout
-                                        </Button>
-                                    </Link>
+                                    <Button
+                                        className="w-full bg-black text-white hover:bg-gray-800"
+                                        onClick={() => {
+                                            // TODO: Implement Stripe Checkout
+                                            console.log("Implement Stripe Checkout");
+                                        }}
+                                    >
+                                        Checkout
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>

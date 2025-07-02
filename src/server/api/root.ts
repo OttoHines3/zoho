@@ -1,10 +1,8 @@
 import { postRouter } from "~/server/api/routers/post";
-import { checkoutRouter } from "~/server/api/routers/checkout";
-import { companyInfoRouter } from "~/server/api/routers/company-info";
-import { checkoutSessionRouter } from "~/server/api/routers/checkout-session";
 import { agreementRouter } from "~/server/api/routers/agreement";
+import { companyInfoRouter } from "~/server/api/routers/company-info";
 import { zohoRouter } from "~/server/api/routers/zoho";
-import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { createTRPCRouter } from "~/server/api/trpc";
 
 /**
  * This is the primary router for your server.
@@ -13,10 +11,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
-  checkout: checkoutRouter,
-  companyInfo: companyInfoRouter,
-  checkoutSession: checkoutSessionRouter,
   agreement: agreementRouter,
+  companyInfo: companyInfoRouter,
   zoho: zohoRouter,
 });
 

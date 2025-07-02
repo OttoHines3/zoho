@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -53,6 +53,13 @@ export default function ProductPage() {
 
     const product = PRODUCT_DATA[productId as keyof typeof PRODUCT_DATA];
 
+    // Set default variant when product loads
+    useEffect(() => {
+        if (product?.variants && product.variants.length > 0) {
+            setSelectedVariant(product.variants[0].id);
+        }
+    }, [product]);
+
     if (!product) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -72,10 +79,24 @@ export default function ProductPage() {
     };
 
     const addToCart = () => {
-        if (!selectedVariant) return;
+        if (!selectedVariant) {
+            console.log("No variant selected");
+            return;
+        }
 
         const variant = product.variants.find(v => v.id === selectedVariant);
-        if (!variant) return;
+        if (!variant) {
+            console.log("Variant not found:", selectedVariant);
+            return;
+        }
+
+        console.log("Adding to cart:", {
+            productId,
+            variant: selectedVariant,
+            quantity,
+            title: product.title,
+            price: variant.price,
+        });
 
         dispatch({
             type: "ADD_ITEM",
